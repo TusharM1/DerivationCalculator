@@ -8,4 +8,8 @@ public class Sentence {
 		this.sentenceLetter = sentenceLetter;
 	}
 
+	@Override
+	public String toString() {
+		return String.valueOf(sentenceLetter);
+	}
 }

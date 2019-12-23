@@ -1,5 +1,6 @@
 package Expression;
 
+import Operator.BinaryOperator;
 import Operator.UnaryOperator;
 import Sentence.Sentence;
 
@@ -7,7 +8,7 @@ public abstract class Expression {
 
 	public static Expression generateExpressionTree(String expression) throws IllegalArgumentException {
 		try {
-			Expression root = null, currentExpression = null;
+			Expression root = null;
 			int index = 0;
 			while (index < expression.length()) {
 				if (expression.charAt(index) == ' ') {
@@ -25,44 +26,79 @@ public abstract class Expression {
 							count--;
 						index++;
 					}
-					Expression subExpression = generateExpressionTree(expression.substring(previousIndex, index));
-//					if (root == null)
-//						root = subExpression;
-//					else if (root instanceof UnaryExpression)
-//						((UnaryExpression) root).setExpression(subExpression);
-//					else {
-//						BinaryExpression binaryExpression = (BinaryExpression) root;
-//						if (binaryExpression.getLeftExpression() == null)
-//							binaryExpression.setLeftExpression(subExpression);
-//						else if (binaryExpression.getRightExpression() == null)
-//							binaryExpression.setRightExpression(subExpression);
+					Expression subExpression = generateExpressionTree(expression.substring(previousIndex, index - 1));
+					if (root == null)
+						root = subExpression;
+					else if (root instanceof BinaryExpression) {
+						BinaryExpression binaryExpression = (BinaryExpression) root;
+						if (binaryExpression.getLeftExpression() == null)
+							binaryExpression.setLeftExpression(subExpression);
+						else if (binaryExpression.getRightExpression() == null)
+							binaryExpression.setRightExpression(subExpression);
 //						else
 //							throw new Exception();
-//					}
+					}
 					continue;
 				}
-				if (expression.charAt(index) == '~') {
-//					if (root == null)
-//						root = new UnaryExpression(null, UnaryOperator.NEGATION);
+//				if (expression.charAt(index) == '~') {
+////					if (root == null)
+////						root = new UnaryExpression(null, UnaryOperator.NEGATION);
+//					continue;
+//				}
+				if ("∧∨⊃≡˜·*+→↔¬&|!=~".contains(String.valueOf(expression.charAt(index)))) {
+					if ("∧·*&".contains(String.valueOf(expression.charAt(index))))
+						root = new BinaryExpression(root, null, BinaryOperator.CONJUNCTION);
+					else if ("∨+|".contains(String.valueOf(expression.charAt(index))))
+						root = new BinaryExpression(root, null, BinaryOperator.DISJUNCTION);
+					else if ("⊃→".contains(String.valueOf(expression.charAt(index))))
+						root = new BinaryExpression(root, null, BinaryOperator.CONDITIONAL);
+					else if ("≡↔=".contains(String.valueOf(expression.charAt(index))))
+						root = new BinaryExpression(root, null, BinaryOperator.BICONDITIONAL);
+					else if ("˜¬!~".contains(String.valueOf(expression.charAt(index)))) {
+						index++;
+						int previousIndex = index;
+						int count = 0;
+						while (index < expression.length()) {
+							if ("∧∨⊃≡·*+→↔&|=".contains(String.valueOf(expression.charAt(index))) && count == 0)
+								break;
+							if (expression.charAt(index) == '(')
+								count++;
+							else if (expression.charAt(index) == ')')
+								count--;
+							index++;
+						}
+						root = new UnaryExpression(UnaryOperator.NEGATION, generateExpressionTree(expression.substring(previousIndex, index)));
+					}
+					index++;
+					continue;
+				}
+				else if (expression.charAt(index) == '-' && expression.charAt(index + 1) == '>') {
+					root = new BinaryExpression(root, null, BinaryOperator.CONDITIONAL);
+					index+=2;
 					continue;
 				}
 //				if ("&|!".contains(String.valueOf(expression.charAt(index))) ||
 //					"∧")
 				if (expression.charAt(index) >= 'A' && expression.charAt(index) <= 'Z') {
-//					SimpleExpression simpleExpression = new SimpleExpression(new Sentence(expression.charAt(index)));
-//					if (root == null)
-//						root = simpleExpression;
+					SimpleExpression simpleExpression = new SimpleExpression(new Sentence(expression.charAt(index)));
+					if (root == null)
+						root = simpleExpression;
 //					else if (root instanceof UnaryExpression) {
 //						UnaryExpression currentExpression = (UnaryExpression) root;
 //						while (!(currentExpression.getExpression() instanceof UnaryExpression))
 //							currentExpression = (UnaryExpression) currentExpression.getExpression();
 //						currentExpression.setExpression(simpleExpression);
 //					}
-//					else if (root instanceof BinaryExpression) {
-//						BinaryExpression binaryExpression = (BinaryExpression) root;
-//						if (binaryExpression.getLeftExpression() == null)
-//							binaryExpression.setLeftExpression();
-//					}
+					else if (root instanceof BinaryExpression) {
+						BinaryExpression binaryExpression = (BinaryExpression) root;
+						if (binaryExpression.getLeftExpression() == null)
+							binaryExpression.setLeftExpression(simpleExpression);
+						else if (binaryExpression.getRightExpression() == null)
+							binaryExpression.setRightExpression(simpleExpression);
+//						else
+//							throw new Exception();
+					}
+					index++;
 				}
 			}
 			return root;
@@ -70,6 +106,25 @@ public abstract class Expression {
 		catch (Exception e) {
 			e.printStackTrace();
 			throw new IllegalArgumentException("Incorrectly formatted String");
+		}
+	}
+
+	public static void printExpressionTree(Expression expressionTree) {
+		if (expressionTree == null)
+			return;
+		if (expressionTree instanceof SimpleExpression) {
+			System.out.print(((SimpleExpression) expressionTree).getSentence());
+			return;
+		}
+		if (expressionTree instanceof UnaryExpression) {
+			System.out.print("~");
+			printExpressionTree(((UnaryExpression) expressionTree).getExpression());
+			return;
+		}
+		if (expressionTree instanceof BinaryExpression) {
+			printExpressionTree(((BinaryExpression) expressionTree).getLeftExpression());
+			System.out.print(((BinaryExpression) expressionTree).getOperator());
+			printExpressionTree(((BinaryExpression) expressionTree).getRightExpression());
 		}
 	}
 
