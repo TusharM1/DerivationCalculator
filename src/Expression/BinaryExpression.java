@@ -22,4 +22,8 @@ public class BinaryExpression extends Expression {
 	public BinaryOperator getOperator() { return operator; }
 	public void setOperator(BinaryOperator operator) { this.operator = operator; }
 
+	@Override
+	public String toString() {
+		return leftExpression.toString() + " " + operator.toString() + " " + rightExpression.toString();
+	}
 }

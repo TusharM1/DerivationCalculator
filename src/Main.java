@@ -6,9 +6,9 @@ public class Main {
 
 		System.out.println("Derivation Calculator");
 
-		Expression expression = Expression.generateExpressionTree("X -> (A = (B -> L))");
-
-		Expression.printExpressionTree(expression);
+		Expression.printExpressionTree(Expression.generateExpressionTree("X -> (A = (B -> L))"));
+		Expression.printExpressionTree(Expression.generateExpressionTree("(X ^ B) = ~A"));
+		Expression.printExpressionTree(Expression.generateExpressionTree("(~B -> ~A) ^ (B -> X)"));
 
 	}
 

@@ -13,4 +13,8 @@ public class SimpleExpression extends Expression {
 	public Sentence getSentence() { return sentence; }
 	public void setSentence(Sentence sentence) { this.sentence = sentence; }
 
+	@Override
+	public String toString() {
+		return sentence.toString();
+	}
 }

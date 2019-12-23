@@ -12,4 +12,5 @@ public class Sentence {
 	public String toString() {
 		return String.valueOf(sentenceLetter);
 	}
+
 }
