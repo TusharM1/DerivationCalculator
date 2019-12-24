@@ -2,15 +2,15 @@ package Expression;
 
 import java.util.HashMap;
 
-public class UnaryExpression extends Expression {
+public class NegatedExpression extends Expression {
 
 	private Expression expression;
 
-	public UnaryExpression(Expression expression, boolean negation) {
+	public NegatedExpression(Expression expression) {
 		this.expression = expression;
 		if (expression != null)
 			getSentences().addAll(expression.getSentences());
-		setNegation(negation);
+		setNegation(true);
 	}
 
 	@Override
@@ -31,5 +31,10 @@ public class UnaryExpression extends Expression {
 		if (isNegated())
 			return "~" + expression.toString();
 		return expression.toString();
+	}
+
+	@Override
+	protected NegatedExpression clone() {
+		return new NegatedExpression(expression.clone());
 	}
 }

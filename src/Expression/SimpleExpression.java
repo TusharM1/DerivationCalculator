@@ -6,9 +6,16 @@ public class SimpleExpression extends Expression {
 
 	private char sentence;
 
-	public SimpleExpression(char sentence) {
+	// TODO save references in truthValues of actual SimpleExpressions so they can be referenced multiple times and changed easily
+
+	public SimpleExpression(char sentence, boolean negation) {
 		this.sentence = sentence;
+		setNegation(negation);
 		getSentences().add(sentence);
+	}
+
+	public SimpleExpression(char sentence) {
+		this(sentence, false);
 	}
 
 	public char getSentence() { return sentence; }
@@ -26,5 +33,10 @@ public class SimpleExpression extends Expression {
 		if (isNegated())
 			return "~" + sentence;
 		return String.valueOf(sentence);
+	}
+
+	@Override
+	protected SimpleExpression clone() {
+		return new SimpleExpression(sentence);
 	}
 }

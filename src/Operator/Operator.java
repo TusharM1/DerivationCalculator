@@ -1,6 +1,6 @@
 package Operator;
 
-public enum BinaryOperator {
+public enum Operator {
 
 	DISJUNCTION("∨"),
 	CONJUNCTION("∧"),
@@ -8,7 +8,7 @@ public enum BinaryOperator {
 	BICONDITIONAL("=");
 
 	private String operator;
-	BinaryOperator(String operator) {
+	Operator(String operator) {
 		this.operator = operator;
 	}
 

@@ -1,22 +1,27 @@
 package Expression;
 
-import Operator.BinaryOperator;
+import Operator.Operator;
 
 import java.util.HashMap;
 
 public class BinaryExpression extends Expression {
 
 	private Expression leftExpression, rightExpression;
-	private BinaryOperator operator;
+	private Operator operator;
 
-	public BinaryExpression(Expression leftExpression, Expression rightExpression, BinaryOperator operator) {
+	public BinaryExpression(Expression leftExpression, Expression rightExpression, Operator operator, boolean negation) {
 		this.leftExpression = leftExpression;
 		this.rightExpression = rightExpression;
 		this.operator = operator;
+		setNegation(negation);
 		if (leftExpression != null)
 			getSentences().addAll(leftExpression.getSentences());
 		if (rightExpression != null)
 			getSentences().addAll(rightExpression.getSentences());
+	}
+
+	public BinaryExpression(Expression leftExpression, Expression rightExpression, Operator operator) {
+		this(leftExpression, rightExpression, operator, false);
 	}
 
 	public Expression getLeftExpression() { return leftExpression; }
@@ -33,8 +38,8 @@ public class BinaryExpression extends Expression {
 			getSentences().addAll(rightExpression.getSentences());
 	}
 
-	public BinaryOperator getOperator() { return operator; }
-	public void setOperator(BinaryOperator operator) { this.operator = operator; }
+	public Operator getOperator() { return operator; }
+	public void setOperator(Operator operator) { this.operator = operator; }
 
 	@Override
 	public boolean evaluate(HashMap<Character, Boolean> truthValues) {
@@ -55,5 +60,10 @@ public class BinaryExpression extends Expression {
 	@Override
 	public String toString() {
 		return "(" + leftExpression.toString() + " " + operator.toString() + " " + rightExpression.toString() + ")";
+	}
+
+	@Override
+	protected BinaryExpression clone() {
+		return new BinaryExpression(leftExpression.clone(), rightExpression.clone(), operator);
 	}
 }
