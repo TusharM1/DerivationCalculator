@@ -1,20 +1,28 @@
 package Expression;
 
-import Sentence.Sentence;
+import java.util.HashMap;
 
 public class SimpleExpression extends Expression {
 
-	private Sentence sentence;
+	private char sentence;
 
-	public SimpleExpression(Sentence sentence) {
+	public SimpleExpression(char sentence) {
 		this.sentence = sentence;
+		getSentences().add(sentence);
 	}
 
-	public Sentence getSentence() { return sentence; }
-	public void setSentence(Sentence sentence) { this.sentence = sentence; }
+	public char getSentence() { return sentence; }
+	public void setSentence(char sentence) { this.sentence = sentence; }
+
+	@Override
+	public boolean evaluate(HashMap<Character, Boolean> truthValues) {
+		if (truthValues.containsKey(sentence))
+			return truthValues.get(sentence);
+		return false;
+	}
 
 	@Override
 	public String toString() {
-		return sentence.toString();
+		return String.valueOf(sentence);
 	}
 }
