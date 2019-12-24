@@ -9,7 +9,7 @@ public class BinaryExpression extends Expression {
 	private Expression leftExpression, rightExpression;
 	private Operator operator;
 
-	public BinaryExpression(Expression leftExpression, Expression rightExpression, Operator operator, boolean negation) {
+	public BinaryExpression(Expression leftExpression, Expression rightExpression, Operator operator, int negation) {
 		this.leftExpression = leftExpression;
 		this.rightExpression = rightExpression;
 		this.operator = operator;
@@ -21,7 +21,7 @@ public class BinaryExpression extends Expression {
 	}
 
 	public BinaryExpression(Expression leftExpression, Expression rightExpression, Operator operator) {
-		this(leftExpression, rightExpression, operator, false);
+		this(leftExpression, rightExpression, operator, 0);
 	}
 
 	public Expression getLeftExpression() { return leftExpression; }
@@ -59,11 +59,12 @@ public class BinaryExpression extends Expression {
 
 	@Override
 	public String toString() {
-		return "(" + leftExpression.toString() + " " + operator.toString() + " " + rightExpression.toString() + ")";
+		return "~".repeat(Math.max(0, getNegation())) +
+				"(" + leftExpression.toString() + " " + operator.toString() + " " + rightExpression.toString() + ")";
 	}
 
 	@Override
 	protected BinaryExpression clone() {
-		return new BinaryExpression(leftExpression.clone(), rightExpression.clone(), operator);
+		return new BinaryExpression(leftExpression.clone(), rightExpression.clone(), operator, getNegation());
 	}
 }

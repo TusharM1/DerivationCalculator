@@ -10,11 +10,11 @@ public abstract class Expression {
 	// EXPRESSION SUBCLASSES
 
 	private HashSet<Character> sentences;
-	private boolean negation;
+	private int negation;
 
 	public Expression() {
 		sentences = new HashSet<>();
-		negation = false;
+		negation = 0;
 	}
 
 	public abstract boolean evaluate(HashMap<Character, Boolean> truthValues);
@@ -27,9 +27,12 @@ public abstract class Expression {
 	}
 
 	public boolean isNegated() {
+		return negation % 2 != 0;
+	}
+	public int getNegation() {
 		return negation;
 	}
-	public void setNegation(boolean negation) {
+	public void setNegation(int negation) {
 		this.negation = negation;
 	}
 
@@ -76,12 +79,8 @@ public abstract class Expression {
 //						}
 						index++;
 						Expression subExpression = generateExpressionTree(expression.substring(index, index = findSubExpressionIndex(expression, index)));
-						if (subExpression instanceof SimpleExpression) {
-							subExpression.negation = true;
-							root = addExpressionToRoot(root, subExpression);
-						}
-						else
-							root = addExpressionToRoot(root, new NegatedExpression(subExpression));
+						subExpression.negation++;
+						root = addExpressionToRoot(root, subExpression);
 						continue;
 					}
 					index++;
@@ -95,7 +94,7 @@ public abstract class Expression {
 					continue;
 				}
 				if (expression.charAt(index) >= 'A' && expression.charAt(index) <= 'Z') {
-					root = addExpressionToRoot(root, new SimpleExpression(expression.charAt(index)));
+					root = addExpressionToRoot(root, new UnaryExpression(expression.charAt(index)));
 					index++;
 				}
 			}
@@ -153,9 +152,9 @@ public abstract class Expression {
 	}
 
 	private static HashSet<HashMap<Character, Boolean>> findValidTruthValues(Expression expression) {
-		if (expression instanceof NegatedExpression) {
-			// not the expression
-		}
+//		if (expression instanceof NegatedExpression) {
+//			// not the expression
+//		}
 		if (expression instanceof BinaryExpression) {
 			switch (((BinaryExpression) expression).getOperator()) {
 				case DISJUNCTION:
@@ -181,92 +180,79 @@ public abstract class Expression {
 
 	// REMOVE DOUBLE NEGATIVES
 
+	// kinda lazy tbh i should get rid of this
 	public static Expression removeDoubleNegatives(Expression expression) {
-//		if (expression )
-		return null;
+		expression.negation %= 2;
+		return expression;
+	}
+
+	public static Expression removeAllDoubleNegatives(Expression expression) {
+		if (expression.negation > 1)
+			expression.negation %= 2;
+		if (expression instanceof BinaryExpression) {
+			removeAllDoubleNegatives(((BinaryExpression) expression).getLeftExpression());
+			removeAllDoubleNegatives(((BinaryExpression) expression).getRightExpression());
+		}
+		return expression;
 	}
 
 	// EXPAND EXPRESSION
 
-	public static Expression expandExpression(Expression expression) {
+	public static Expression expand(Expression expression) {
 		expression = expression.clone();
+		return expandExpression(expression);
+	}
+
+	private static Expression expandExpression(Expression expression) {
 		if (expression instanceof BinaryExpression) {
 			BinaryExpression binaryExpression = (BinaryExpression) expression;
+			removeDoubleNegatives(binaryExpression);
 			switch (binaryExpression.getOperator()) {
 				case DISJUNCTION:
-					if (expression.negation) {
+					if (expression.isNegated()) {
 						binaryExpression.setOperator(Operator.CONJUNCTION);
-						resolveNegativesLeft(binaryExpression);
-						resolveNegativesRight(binaryExpression);
+						binaryExpression.getLeftExpression().negation++;
+						binaryExpression.getRightExpression().negation++;
+						expression.negation--;
 					}
-					binaryExpression.setLeftExpression(expandExpression(binaryExpression.getLeftExpression()));
-					binaryExpression.setRightExpression(expandExpression(binaryExpression.getRightExpression()));
-					return binaryExpression;
+					break;
 				case CONJUNCTION:
-					if (expression.negation) {
+					if (expression.isNegated()) {
 						binaryExpression.setOperator(Operator.DISJUNCTION);
-						resolveNegativesLeft(binaryExpression);
-						resolveNegativesRight(binaryExpression);
+						binaryExpression.getLeftExpression().negation++;
+						binaryExpression.getRightExpression().negation++;
+						expression.negation--;
 					}
-					binaryExpression.setLeftExpression(expandExpression(binaryExpression.getLeftExpression()));
-					binaryExpression.setRightExpression(expandExpression(binaryExpression.getRightExpression()));
-					return binaryExpression;
+					break;
 				case CONDITIONAL:
-					if (expression.negation) {
+					if (expression.isNegated()) {
 						binaryExpression.setOperator(Operator.CONJUNCTION);
-						resolveNegativesRight(binaryExpression);
+						binaryExpression.getRightExpression().negation++;
+						expression.negation--;
 					}
 					else {
 						binaryExpression.setOperator(Operator.DISJUNCTION);
-						resolveNegativesLeft(binaryExpression);
+						binaryExpression.getLeftExpression().negation++;
 					}
-					binaryExpression.setLeftExpression(expandExpression(binaryExpression.getLeftExpression()));
-					binaryExpression.setRightExpression(expandExpression(binaryExpression.getRightExpression()));
-					return binaryExpression;
+					break;
 				// Two halves point to the same thing. Don't make it a problem if it doesn't have to be
+				// it became a problem nvm
 				case BICONDITIONAL:
 					BinaryExpression biconditional = new BinaryExpression(new BinaryExpression(binaryExpression.getLeftExpression(), binaryExpression.getRightExpression(), Operator.CONJUNCTION),
-							new BinaryExpression(binaryExpression.getLeftExpression().clone(), binaryExpression.getRightExpression(), Operator.CONJUNCTION), Operator.DISJUNCTION);
-					if (expression.negation) {
-						biconditional.getRightExpression();
-					}
+							new BinaryExpression(binaryExpression.getLeftExpression().clone(), binaryExpression.getRightExpression().clone(), Operator.CONJUNCTION), Operator.DISJUNCTION);
+					((BinaryExpression) biconditional.getRightExpression()).getLeftExpression().negation++;
+					if (expression.isNegated())
+						((BinaryExpression) biconditional.getLeftExpression()).getRightExpression().negation++;
+					else
+						((BinaryExpression) biconditional.getRightExpression()).getRightExpression().negation++;
+					binaryExpression = biconditional;
+					break;
 			}
+			binaryExpression.setLeftExpression(removeDoubleNegatives(expandExpression(binaryExpression.getLeftExpression())));
+			binaryExpression.setRightExpression(removeDoubleNegatives(expandExpression(binaryExpression.getRightExpression())));
+			return removeDoubleNegatives(binaryExpression);
 		}
-//		if (expression.negation) {
-//			if (expression instanceof BinaryExpression) {
-//				switch (((BinaryExpression) expression).getOperator()) {
-//					case BICONDITIONAL:
-//				}
-//			}
-//			if (expression instanceof UnaryExpression)
-//		}
-		return null;
-	}
-
-	private static void resolveNegativesRight(BinaryExpression binaryExpression) {
-		Expression rightExpression = binaryExpression.getRightExpression();
-		if (rightExpression instanceof BinaryExpression)
-			rightExpression.negation = !rightExpression.negation;
-		else if (rightExpression instanceof NegatedExpression) {
-			Expression rightInner = ((NegatedExpression) rightExpression).getExpression();
-			if (rightInner.isNegated()) {
-				rightInner.setNegation(false);
-				binaryExpression.setRightExpression(rightInner);
-			}
-		}
-	}
-
-	private static void resolveNegativesLeft(BinaryExpression binaryExpression) {
-		Expression leftExpression = binaryExpression.getLeftExpression();
-		if (leftExpression instanceof BinaryExpression)
-			leftExpression.negation = !leftExpression.negation;
-		else if (leftExpression instanceof NegatedExpression) {
-			Expression leftInner = ((NegatedExpression) leftExpression).getExpression();
-			if (leftInner.isNegated()) {
-				leftInner.setNegation(false);
-				binaryExpression.setLeftExpression(leftInner);
-			}
-		}
+		return removeDoubleNegatives(expression);
 	}
 
 	// PRINT EXPRESSION TREE
