@@ -11,9 +11,11 @@ public abstract class Expression {
 	// EXPRESSION SUBCLASSES
 
 	private HashSet<Character> sentences;
+	private boolean negation;
 
 	public Expression() {
 		sentences = new HashSet<>();
+		negation = false;
 	}
 
 	public abstract boolean evaluate(HashMap<Character, Boolean> truthValues);
@@ -21,9 +23,15 @@ public abstract class Expression {
 	public HashSet<Character> getSentences() {
 		return sentences;
 	}
-
 	public void setSentences(HashSet<Character> sentences) {
 		this.sentences = sentences;
+	}
+
+	public boolean isNegated() {
+		return negation;
+	}
+	public void setNegation(boolean negation) {
+		this.negation = negation;
 	}
 
 	// GENERATE EXPRESSION TREE
@@ -50,7 +58,7 @@ public abstract class Expression {
 							count--;
 						index++;
 					}
-					root = addExpressionToRoot(root, new SubExpression(generateExpressionTree(expression.substring(previousIndex, index - 1))));
+					root = addExpressionToRoot(root, generateExpressionTree(expression.substring(previousIndex, index - 1)));
 					continue;
 				}
 				if ("∧^∨⊃≡˜·*+→↔¬&|!=~".contains(String.valueOf(expression.charAt(index)))) {
@@ -68,7 +76,7 @@ public abstract class Expression {
 //							index += 2;
 //						}
 						index++;
-						root = addExpressionToRoot(root, new UnaryExpression(UnaryOperator.NEGATION, generateExpressionTree(expression.substring(index, index = findSubExpressionIndex(expression, index)))));
+						root = addExpressionToRoot(root, new UnaryExpression(generateExpressionTree(expression.substring(index, index = findSubExpressionIndex(expression, index))), true));
 						continue;
 					}
 					index++;
@@ -113,7 +121,8 @@ public abstract class Expression {
 	private static int findSubExpressionIndex(String expression, int startingIndex) {
 		int count = 0;
 		while (startingIndex < expression.length()) {
-			if ("∧^∨⊃≡·*+→↔&|=".contains(String.valueOf(expression.charAt(startingIndex))) && count == 0)
+			if (("∧^∨⊃≡·*+→↔&|=".contains(String.valueOf(expression.charAt(startingIndex))) ||
+					expression.charAt(startingIndex) == '-' && expression.charAt(startingIndex + 1) == '>') && count == 0)
 				break;
 			if (expression.charAt(startingIndex) == '(')
 				count++;
@@ -165,12 +174,34 @@ public abstract class Expression {
 		return expressionTree.evaluate(truthValues);
 	}
 
+	// EXPAND EXPRESSION
+
+//	public static Expression expandExpression(Expression expression) {
+//		if (expression.negation) {
+//			if (expression instanceof BinaryExpression) {
+//
+//			}
+//			if (expression instanceof UnaryExpression)
+//		}
+//		return null;
+//	}
+
 	// PRINT EXPRESSION TREE
 
-	public static void printExpressionTree(Expression expressionTree) {
-		if (expressionTree == null)
-			return;
-		System.out.println(expressionTree.toString());
+	public static String expressionToString(Expression expression) {
+		if (expression == null)
+			return "";
+		if (expression instanceof BinaryExpression) {
+			BinaryExpression binaryExpression = (BinaryExpression) expression;
+			return binaryExpression.getLeftExpression().toString() + " " +
+					binaryExpression.getOperator().toString() + " " +
+					binaryExpression.getRightExpression().toString();
+		}
+		return expression.toString();
+	}
+
+	public static void printExpression(Expression expression) {
+		System.out.println(expressionToString(expression));
 	}
 
 }

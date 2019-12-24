@@ -8,10 +8,37 @@ public class Main {
 
 		System.out.println("Derivation Calculator");
 
-		Expression.printExpressionTree(Expression.generateExpressionTree("X -> (A = (B -> L))"));
-		Expression.printExpressionTree(Expression.generateExpressionTree("(X ^ B) = ~A"));
-		Expression.printExpressionTree(Expression.generateExpressionTree("(~B -> ~A) ^ (B -> X)"));
-		Expression.printExpressionTree(Expression.generateExpressionTree("~L"));
+		Expression.printExpression(Expression.generateExpressionTree("A"));
+		Expression.printExpression(Expression.generateExpressionTree("~A"));
+		Expression.printExpression(Expression.generateExpressionTree("A & B"));
+		Expression.printExpression(Expression.generateExpressionTree("A | B"));
+		Expression.printExpression(Expression.generateExpressionTree("A -> B"));
+		Expression.printExpression(Expression.generateExpressionTree("A = B"));
+
+		Expression.printExpression(Expression.generateExpressionTree("(A)"));
+		Expression.printExpression(Expression.generateExpressionTree("((A))"));
+		Expression.printExpression(Expression.generateExpressionTree("(((A)))"));
+		Expression.printExpression(Expression.generateExpressionTree("~(A)"));
+		Expression.printExpression(Expression.generateExpressionTree("~((A))"));
+		Expression.printExpression(Expression.generateExpressionTree("(~(A))"));
+		Expression.printExpression(Expression.generateExpressionTree("~(~(A))"));
+		Expression.printExpression(Expression.generateExpressionTree("~(~(~A))"));
+		Expression.printExpression(Expression.generateExpressionTree("(((A)))"));
+		Expression.printExpression(Expression.generateExpressionTree("~(((A)))"));
+
+		Expression.printExpression(Expression.generateExpressionTree("(~A)"));
+		Expression.printExpression(Expression.generateExpressionTree("~(A & B)"));
+		Expression.printExpression(Expression.generateExpressionTree("~(A | B)"));
+		Expression.printExpression(Expression.generateExpressionTree("~(A -> B)"));
+		Expression.printExpression(Expression.generateExpressionTree("~~(A = B)"));
+
+
+		Expression.printExpression(Expression.generateExpressionTree("~~(A = B)"));
+
+		Expression.printExpression(Expression.generateExpressionTree("X -> (A = (B -> L))"));
+		Expression.printExpression(Expression.generateExpressionTree("(X ^ B) = ~A"));
+		Expression.printExpression(Expression.generateExpressionTree("(~B -> ~A) ^ (B -> X)"));
+		Expression.printExpression(Expression.generateExpressionTree("~L"));
 
 		HashMap<Character, Boolean> truthValues = new HashMap<>();
 		truthValues.put('X', true);

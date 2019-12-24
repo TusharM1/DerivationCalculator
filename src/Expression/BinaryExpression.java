@@ -20,10 +20,18 @@ public class BinaryExpression extends Expression {
 	}
 
 	public Expression getLeftExpression() { return leftExpression; }
-	public void setLeftExpression(Expression leftExpression) { this.leftExpression = leftExpression; }
+	public void setLeftExpression(Expression leftExpression) {
+		this.leftExpression = leftExpression;
+		if (leftExpression != null)
+			getSentences().addAll(leftExpression.getSentences());
+	}
 
 	public Expression getRightExpression() { return rightExpression; }
-	public void setRightExpression(Expression rightExpression) { this.rightExpression = rightExpression; }
+	public void setRightExpression(Expression rightExpression) {
+		this.rightExpression = rightExpression;
+		if (rightExpression != null)
+			getSentences().addAll(rightExpression.getSentences());
+	}
 
 	public BinaryOperator getOperator() { return operator; }
 	public void setOperator(BinaryOperator operator) { this.operator = operator; }
@@ -46,6 +54,6 @@ public class BinaryExpression extends Expression {
 
 	@Override
 	public String toString() {
-		return leftExpression.toString() + " " + operator.toString() + " " + rightExpression.toString();
+		return "(" + leftExpression.toString() + " " + operator.toString() + " " + rightExpression.toString() + ")";
 	}
 }

@@ -23,6 +23,8 @@ public class SimpleExpression extends Expression {
 
 	@Override
 	public String toString() {
+		if (isNegated())
+			return "~" + sentence;
 		return String.valueOf(sentence);
 	}
 }
