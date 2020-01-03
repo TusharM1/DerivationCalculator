@@ -2,19 +2,19 @@ package Expression;
 
 import java.util.HashMap;
 
-public class UnaryExpression extends Expression {
+public class SimpleExpression extends Expression {
 
 	private char sentence;
 
 	// TODO save references in truthValues of actual SimpleExpressions so they can be referenced multiple times and changed easily
 
-	public UnaryExpression(char sentence, int negation) {
+	public SimpleExpression(char sentence, int negation) {
 		this.sentence = sentence;
 		setNegation(negation);
 		getSentences().add(sentence);
 	}
 
-	public UnaryExpression(char sentence) {
+	public SimpleExpression(char sentence) {
 		this(sentence, 0);
 	}
 
@@ -34,7 +34,16 @@ public class UnaryExpression extends Expression {
 	}
 
 	@Override
-	protected UnaryExpression clone() {
-		return new UnaryExpression(sentence, getNegation());
+	protected SimpleExpression clone() {
+		return new SimpleExpression(sentence, getNegation());
 	}
+
+
+
+//	@Override
+//	public int compareTo(Expression expression) {
+//		if (!(expression instanceof UnaryExpression))
+//			return 0;
+//	}
+
 }

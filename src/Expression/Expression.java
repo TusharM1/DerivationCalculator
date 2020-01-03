@@ -1,9 +1,10 @@
 package Expression;
 
-import Operator.Operator;
-
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import Expression.ComplexExpression.Operator;
 
 public abstract class Expression {
 
@@ -65,13 +66,13 @@ public abstract class Expression {
 				}
 				if ("∧^∨⊃≡˜·*+→↔¬&|!=~".contains(String.valueOf(expression.charAt(index)))) {
 					if ("∧^·*&".contains(String.valueOf(expression.charAt(index))))
-						root = new BinaryExpression(root, null, Operator.CONJUNCTION);
+						root = new ComplexExpression(root, null, Operator.CONJUNCTION);
 					else if ("∨+|".contains(String.valueOf(expression.charAt(index))))
-						root = new BinaryExpression(root, null, Operator.DISJUNCTION);
+						root = new ComplexExpression(root, null, Operator.DISJUNCTION);
 					else if ("⊃→".contains(String.valueOf(expression.charAt(index))))
-						root = new BinaryExpression(root, null, Operator.CONDITIONAL);
+						root = new ComplexExpression(root, null, Operator.CONDITIONAL);
 					else if ("≡↔=".contains(String.valueOf(expression.charAt(index))))
-						root = new BinaryExpression(root, null, Operator.BICONDITIONAL);
+						root = new ComplexExpression(root, null, Operator.BICONDITIONAL);
 					else if ("˜¬!~".contains(String.valueOf(expression.charAt(index)))) {
 						// TODO add XOR
 //						if (expression.charAt(index) == '!' && expression.charAt(index + 1) == '=') {
@@ -89,12 +90,12 @@ public abstract class Expression {
 					continue;
 				}
 				else if (expression.charAt(index) == '-' && expression.charAt(index + 1) == '>') {
-					root = new BinaryExpression(root, null, Operator.CONDITIONAL);
+					root = new ComplexExpression(root, null, Operator.CONDITIONAL);
 					index+=2;
 					continue;
 				}
 				if (expression.charAt(index) >= 'A' && expression.charAt(index) <= 'Z') {
-					root = addExpressionToRoot(root, new UnaryExpression(expression.charAt(index)));
+					root = addExpressionToRoot(root, new SimpleExpression(expression.charAt(index)));
 					index++;
 				}
 			}
@@ -109,17 +110,17 @@ public abstract class Expression {
 	private static Expression addExpressionToRoot(Expression root, Expression expression) throws Exception {
 		if (root == null)
 			return expression;
-		BinaryExpression binaryExpression = (BinaryExpression) root;
-		if (binaryExpression.getLeftExpression() == null)
-			binaryExpression.setLeftExpression(expression);
-		else if (binaryExpression.getRightExpression() == null) {
-			binaryExpression.setRightExpression(expression);
-			binaryExpression.getSentences().addAll(binaryExpression.getRightExpression().getSentences());
+		ComplexExpression complexExpression = (ComplexExpression) root;
+		if (complexExpression.getLeftExpression() == null)
+			complexExpression.setLeftExpression(expression);
+		else if (complexExpression.getRightExpression() == null) {
+			complexExpression.setRightExpression(expression);
+			complexExpression.getSentences().addAll(complexExpression.getRightExpression().getSentences());
 		}
 		else
 			throw new Exception("Ill-formatted Input");
-		binaryExpression.getSentences().addAll(binaryExpression.getLeftExpression().getSentences());
-		return binaryExpression;
+		complexExpression.getSentences().addAll(complexExpression.getLeftExpression().getSentences());
+		return complexExpression;
 	}
 
 	private static int findSubExpressionIndex(String expression, int startingIndex) {
@@ -137,42 +138,83 @@ public abstract class Expression {
 		return startingIndex;
 	}
 
+	// DERIVE CONCLUSION
+
+	public static void derivation(Expression[] premises, Expression conclusion) { }
+
 	// VALIDATE ARGUMENT
 
-	public static String validateArgument(String[] premises, String conclusion) {
+	public static boolean validateArgument(String[] premises, String conclusion) {
 		Expression[] expressionPremises = new Expression[premises.length];
 		for (int i = 0; i < expressionPremises.length; i++)
 			expressionPremises[i] = generateExpressionTree(premises[i]);
 		return validateArgument(expressionPremises, generateExpressionTree(conclusion));
 	}
 
-	public static String validateArgument(Expression[] premises, Expression conclusion) {
-//		HashSet<HashMap<Character, Boolean>> stuff;
-		return null;
+	public static boolean validateArgument(Expression[] premises, Expression conclusion) {
+		conclusion = conclusion.clone();
+		conclusion.negation++;
+		ComplexExpression root = new ComplexExpression(null, conclusion, Operator.CONJUNCTION);
+		ComplexExpression current = root;
+		for (int i = 0; i < premises.length - 1; i++) {
+			ComplexExpression complexExpression = new ComplexExpression(null, premises[i], Operator.CONJUNCTION);
+			current.setLeftExpression(complexExpression);
+			current = complexExpression;
+		}
+		current.setLeftExpression(premises[premises.length - 1]);
+		return findTruthValues(root).isEmpty();
 	}
 
-	private static HashSet<HashMap<Character, Boolean>> findValidTruthValues(Expression expression) {
-//		if (expression instanceof NegatedExpression) {
-//			// not the expression
-//		}
-		if (expression instanceof BinaryExpression) {
-			switch (((BinaryExpression) expression).getOperator()) {
-				case DISJUNCTION:
-					// add two sets together and if there is a conflict, remove the elements
-					break;
-				case CONJUNCTION:
-					// add two sets together and if there is a conflict, then there is no valid truth table
-					break;
-				case CONDITIONAL:
-					// not the left side and do disjunction
-					break;
-				case BICONDITIONAL:
-					//
-					break;
+	public static HashSet<HashMap<Character, Boolean>> findTruthValues(String expression) {
+		return generateTruthValuesSet(generateExpressionTree(expression));
+	}
+
+	public static HashSet<HashMap<Character, Boolean>> findTruthValues(Expression expression) {
+		return generateTruthValuesSet(expand(expression));
+	}
+
+	private static HashSet<HashMap<Character, Boolean>> generateTruthValuesSet(Expression expression) {
+		if (expression instanceof ComplexExpression) {
+			ComplexExpression complexExpression = (ComplexExpression) expression;
+			if (complexExpression.getOperator() == Operator.CONJUNCTION) {
+				HashSet<HashMap<Character, Boolean>> leftTruthValues = generateTruthValuesSet(complexExpression.getLeftExpression());
+				HashSet<HashMap<Character, Boolean>> rightTruthValues = generateTruthValuesSet(complexExpression.getRightExpression());
+				HashSet<HashMap<Character, Boolean>> combinedTruthValues = new HashSet<>();
+				for (HashMap<Character, Boolean> leftHashMap : leftTruthValues) {
+					for (HashMap<Character, Boolean> rightHashMap : rightTruthValues) {
+						//noinspection unchecked
+						HashMap<Character, Boolean> leftHashMapClone = (HashMap<Character, Boolean>) leftHashMap.clone();
+						AtomicBoolean valid = new AtomicBoolean(true);
+						rightHashMap.forEach((key, value) -> leftHashMapClone.merge(key, value, (leftValue, rightValue) -> {
+							if (leftValue != rightValue)
+								valid.set(false);
+							return value;
+						}));
+						if (valid.get())
+							combinedTruthValues.add(leftHashMapClone);
+					}
+				}
+				return combinedTruthValues;
+			}
+			if (complexExpression.getOperator() == Operator.DISJUNCTION) {
+				HashSet<HashMap<Character, Boolean>> leftTruthValues = generateTruthValuesSet(complexExpression.getLeftExpression());
+				HashSet<HashMap<Character, Boolean>> rightTruthValues = generateTruthValuesSet(complexExpression.getRightExpression());
+				leftTruthValues.addAll(rightTruthValues);
+				return leftTruthValues;
 			}
 		}
-		return null;
+		if (expression instanceof SimpleExpression) {
+			SimpleExpression simpleExpression = (SimpleExpression) expression;
+			HashSet<HashMap<Character, Boolean>> singletonHashSet = new HashSet<>();
+			HashMap<Character, Boolean> hashMap = new HashMap<>();
+			hashMap.put(simpleExpression.getSentence(), !simpleExpression.isNegated());
+			singletonHashSet.add(hashMap);
+			return singletonHashSet;
+		}
+		return new HashSet<>();
 	}
+
+	// EVALUATE EXPRESSION FOR GIVEN TRUTH VALUES
 
 	public static boolean evaluateExpression(Expression expressionTree, HashMap<Character, Boolean> truthValues) {
 		return expressionTree.evaluate(truthValues);
@@ -180,7 +222,6 @@ public abstract class Expression {
 
 	// REMOVE DOUBLE NEGATIVES
 
-	// kinda lazy tbh i should get rid of this
 	public static Expression removeDoubleNegatives(Expression expression) {
 		expression.negation %= 2;
 		return expression;
@@ -189,9 +230,9 @@ public abstract class Expression {
 	public static Expression removeAllDoubleNegatives(Expression expression) {
 		if (expression.negation > 1)
 			expression.negation %= 2;
-		if (expression instanceof BinaryExpression) {
-			removeAllDoubleNegatives(((BinaryExpression) expression).getLeftExpression());
-			removeAllDoubleNegatives(((BinaryExpression) expression).getRightExpression());
+		if (expression instanceof ComplexExpression) {
+			removeAllDoubleNegatives(((ComplexExpression) expression).getLeftExpression());
+			removeAllDoubleNegatives(((ComplexExpression) expression).getRightExpression());
 		}
 		return expression;
 	}
@@ -199,60 +240,81 @@ public abstract class Expression {
 	// EXPAND EXPRESSION
 
 	public static Expression expand(Expression expression) {
+		if (expression == null)
+			return null;
 		expression = expression.clone();
-		return expandExpression(expression);
+		return expandExpressionTree(expression);
+	}
+
+	public static Expression expandExpressionTree(Expression expression) {
+		if (expression == null)
+			return null;
+		expression = expandExpression(expression);
+		if (expression instanceof ComplexExpression) {
+			ComplexExpression complexExpression = (ComplexExpression) expression;
+			complexExpression.setLeftExpression(removeDoubleNegatives(expandExpressionTree(complexExpression.getLeftExpression())));
+			complexExpression.setRightExpression(removeDoubleNegatives(expandExpressionTree(complexExpression.getRightExpression())));
+		}
+		return expression;
 	}
 
 	private static Expression expandExpression(Expression expression) {
-		if (expression instanceof BinaryExpression) {
-			BinaryExpression binaryExpression = (BinaryExpression) expression;
-			removeDoubleNegatives(binaryExpression);
-			switch (binaryExpression.getOperator()) {
+		if (expression instanceof ComplexExpression) {
+			ComplexExpression complexExpression = (ComplexExpression) expression;
+			removeDoubleNegatives(complexExpression);
+			switch (complexExpression.getOperator()) {
 				case DISJUNCTION:
 					if (expression.isNegated()) {
-						binaryExpression.setOperator(Operator.CONJUNCTION);
-						binaryExpression.getLeftExpression().negation++;
-						binaryExpression.getRightExpression().negation++;
+						complexExpression.setOperator(Operator.CONJUNCTION);
+						complexExpression.getLeftExpression().negation++;
+						complexExpression.getRightExpression().negation++;
 						expression.negation--;
 					}
 					break;
 				case CONJUNCTION:
 					if (expression.isNegated()) {
-						binaryExpression.setOperator(Operator.DISJUNCTION);
-						binaryExpression.getLeftExpression().negation++;
-						binaryExpression.getRightExpression().negation++;
+						complexExpression.setOperator(Operator.DISJUNCTION);
+						complexExpression.getLeftExpression().negation++;
+						complexExpression.getRightExpression().negation++;
 						expression.negation--;
 					}
 					break;
 				case CONDITIONAL:
 					if (expression.isNegated()) {
-						binaryExpression.setOperator(Operator.CONJUNCTION);
-						binaryExpression.getRightExpression().negation++;
+						complexExpression.setOperator(Operator.CONJUNCTION);
+						complexExpression.getRightExpression().negation++;
 						expression.negation--;
 					}
 					else {
-						binaryExpression.setOperator(Operator.DISJUNCTION);
-						binaryExpression.getLeftExpression().negation++;
+						complexExpression.setOperator(Operator.DISJUNCTION);
+						complexExpression.getLeftExpression().negation++;
 					}
 					break;
-				// Two halves point to the same thing. Don't make it a problem if it doesn't have to be
-				// it became a problem nvm
 				case BICONDITIONAL:
-					BinaryExpression biconditional = new BinaryExpression(new BinaryExpression(binaryExpression.getLeftExpression(), binaryExpression.getRightExpression(), Operator.CONJUNCTION),
-							new BinaryExpression(binaryExpression.getLeftExpression().clone(), binaryExpression.getRightExpression().clone(), Operator.CONJUNCTION), Operator.DISJUNCTION);
-					((BinaryExpression) biconditional.getRightExpression()).getLeftExpression().negation++;
+					ComplexExpression biconditional = new ComplexExpression(new ComplexExpression(complexExpression.getLeftExpression(), complexExpression.getRightExpression(), Operator.CONJUNCTION),
+							new ComplexExpression(complexExpression.getLeftExpression().clone(), complexExpression.getRightExpression().clone(), Operator.CONJUNCTION), Operator.DISJUNCTION);
+					((ComplexExpression) biconditional.getRightExpression()).getLeftExpression().negation++;
 					if (expression.isNegated())
-						((BinaryExpression) biconditional.getLeftExpression()).getRightExpression().negation++;
+						((ComplexExpression) biconditional.getLeftExpression()).getRightExpression().negation++;
 					else
-						((BinaryExpression) biconditional.getRightExpression()).getRightExpression().negation++;
-					binaryExpression = biconditional;
+						((ComplexExpression) biconditional.getRightExpression()).getRightExpression().negation++;
+					expression = biconditional;
 					break;
 			}
-			binaryExpression.setLeftExpression(removeDoubleNegatives(expandExpression(binaryExpression.getLeftExpression())));
-			binaryExpression.setRightExpression(removeDoubleNegatives(expandExpression(binaryExpression.getRightExpression())));
-			return removeDoubleNegatives(binaryExpression);
 		}
 		return removeDoubleNegatives(expression);
+	}
+
+	// CHECK IF TWO EXPRESSION TREES ARE EQUIVALENT
+
+	public static boolean checkEquivalence(Expression firstExpression, Expression secondExpression) {
+		firstExpression = expand(firstExpression);
+		secondExpression = expand(secondExpression);
+		if (firstExpression == null || secondExpression == null)
+			return false;
+		// really lazy implementation
+		// TODO fix this implementation later
+		return firstExpression.toString().equals(secondExpression.toString());
 	}
 
 	// PRINT EXPRESSION TREE
@@ -260,11 +322,11 @@ public abstract class Expression {
 	public static String expressionToString(Expression expression) {
 		if (expression == null)
 			return "";
-		if (expression instanceof BinaryExpression) {
-			BinaryExpression binaryExpression = (BinaryExpression) expression;
-			return binaryExpression.getLeftExpression().toString() + " " +
-					binaryExpression.getOperator().toString() + " " +
-					binaryExpression.getRightExpression().toString();
+		if (expression instanceof ComplexExpression) {
+			ComplexExpression complexExpression = (ComplexExpression) expression;
+			return complexExpression.getLeftExpression().toString() + " " +
+					complexExpression.getOperator().toString() + " " +
+					complexExpression.getRightExpression().toString();
 		}
 		return expression.toString();
 	}
@@ -275,6 +337,25 @@ public abstract class Expression {
 
 	@Override
 	protected Expression clone() {
-		return null;
+		if (this instanceof ComplexExpression)
+			return ((ComplexExpression) this).clone();
+		if (this instanceof SimpleExpression)
+			return ((SimpleExpression) this).clone();
+		try {
+			return (Expression) super.clone();
+		}
+		catch (Exception e) {
+			return null;
+		}
 	}
+
+	@Override
+	public boolean equals(Object object) {
+		if (this == object)
+			return true;
+		if (object == null || getClass() != object.getClass())
+			return false;
+		return checkEquivalence(this, (Expression) object);
+	}
+
 }

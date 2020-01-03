@@ -1,15 +1,32 @@
 package Expression;
 
-import Operator.Operator;
-
 import java.util.HashMap;
 
-public class BinaryExpression extends Expression {
+public class ComplexExpression extends Expression {
 
 	private Expression leftExpression, rightExpression;
 	private Operator operator;
 
-	public BinaryExpression(Expression leftExpression, Expression rightExpression, Operator operator, int negation) {
+	public enum Operator {
+
+		DISJUNCTION("∨"),
+		CONJUNCTION("∧"),
+		CONDITIONAL("->"),
+		BICONDITIONAL("=");
+
+		private String operator;
+		Operator(String operator) {
+			this.operator = operator;
+		}
+
+		@Override
+		public String toString() {
+			return operator;
+		}
+
+	}
+
+	public ComplexExpression(Expression leftExpression, Expression rightExpression, Operator operator, int negation) {
 		this.leftExpression = leftExpression;
 		this.rightExpression = rightExpression;
 		this.operator = operator;
@@ -20,7 +37,7 @@ public class BinaryExpression extends Expression {
 			getSentences().addAll(rightExpression.getSentences());
 	}
 
-	public BinaryExpression(Expression leftExpression, Expression rightExpression, Operator operator) {
+	public ComplexExpression(Expression leftExpression, Expression rightExpression, Operator operator) {
 		this(leftExpression, rightExpression, operator, 0);
 	}
 
@@ -64,7 +81,7 @@ public class BinaryExpression extends Expression {
 	}
 
 	@Override
-	protected BinaryExpression clone() {
-		return new BinaryExpression(leftExpression.clone(), rightExpression.clone(), operator, getNegation());
+	protected ComplexExpression clone() {
+		return new ComplexExpression(leftExpression.clone(), rightExpression.clone(), operator, getNegation());
 	}
 }
